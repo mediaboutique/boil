@@ -1,4 +1,4 @@
-# 📦 boil - Boilerplate Sync CLI
+# 🌡️ boil - Keep your boilerplate-based projects in sync
 
 A small, lightweight command-line tool that helps you manage projects derived from a shared boilerplate repository.
 
