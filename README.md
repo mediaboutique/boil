@@ -88,7 +88,7 @@ Options:
 
 ```
 boil update --ref=v1.2.0            # merge from a specific tag/branch
-boil update --strategy=rebase       # or rebase instead of merge
+boil update --strategy=merge        # or rebase instead of merge
 ```
 
 ### 4. View project status
@@ -110,8 +110,8 @@ Project status
 ──────────────
 Current branch:      main
 
-Origin remote:       https://github.com/mediaboutique/my-project
-Upstream remote:     git@github.com:mediaboutique/boilerplate-laravel.git
+Origin remote:       https://github.com/my-organization/my-project
+Upstream remote:     git@github.com:my-organization/project-boilerplate.git
 
 Upstream ref target: main
 Comparison:          Your branch is 2 commits behind upstream/main
