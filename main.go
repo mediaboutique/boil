@@ -57,11 +57,11 @@ Usage:
   boil diff [--ref=<tag-or-branch>]
 
 Config:
-  ~/.boil.json (optional), bijv.:
+  ~/.boil.json (optional), e.g.:
 
   {
-    "boilerplate_repo": "git@github.com:mediaboutique/boilerplate-laravel.git",
-    "boilerplate_branch": "master",
+    "boilerplate_repo": "git@github.com:my-organization/project-boilerplate.git",
+    "boilerplate_branch": "main",
     "default_update_strategy": "merge"
   }
 `)
