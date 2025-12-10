@@ -37,6 +37,8 @@ func main() {
     	handleStatus(cfg)
 	case "diff":
 		handleDiff(cfg, args)
+	case "lock":
+		handleLock(args)
 	case "help", "-h", "--help":
 		usage()
 	default:
@@ -55,6 +57,7 @@ Usage:
   boil update [--strategy=merge|rebase] [--ref=<tag-or-branch>]
   boil status
   boil diff [--ref=<tag-or-branch>]
+  boil lock <path> [<path>...]
 
 Config:
   ~/.boil.json (optional), e.g.:
@@ -415,6 +418,103 @@ func ensureGitRepo(dir string) {
 		os.Exit(1)
 	}
 }
+
+// handleLock marks one or more paths as "locked" by configuring
+// Git's merge driver `ours` and adding merge=ours entries to .gitattributes.
+func handleLock(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Usage: boil lock <path> [<path>...]")
+		fmt.Println()
+		fmt.Println("Example:")
+		fmt.Println("  boil lock config/deploy.php resources/views/layouts/app.blade.php")
+		return
+	}
+
+	ensureGitRepo(".")
+
+	// 1. Ensure merge.ours driver is configured
+	if err := ensureMergeOursDriver(); err != nil {
+		fmt.Fprintf(os.Stderr, "Could not configure merge driver 'ours': %v\n", err)
+		os.Exit(1)
+	}
+
+	// 2. Update .gitattributes
+	if err := addMergeOursAttributes(args); err != nil {
+		fmt.Fprintf(os.Stderr, "Could not update .gitattributes: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Locked paths (merge=ours) have been added to .gitattributes.")
+	fmt.Println("These files will now keep your local version during boilerplate updates.")
+}
+
+func ensureMergeOursDriver() error {
+	// This is idempotent; calling it multiple times is fine.
+	// It tells Git: for merge driver "ours", just keep our version.
+	return runCmd(".", "git", "config", "merge.ours.driver", "true")
+}
+
+func addMergeOursAttributes(paths []string) error {
+	// Read existing .gitattributes if it exists
+	data, err := os.ReadFile(".gitattributes")
+	existing := ""
+	if err == nil {
+		existing = string(data)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	existingLines := strings.Split(existing, "\n")
+	existingSet := make(map[string]bool)
+	for _, line := range existingLines {
+		trim := strings.TrimSpace(line)
+		if trim == "" || strings.HasPrefix(trim, "#") {
+			continue
+		}
+		existingSet[trim] = true
+	}
+
+	var newLines []string
+
+	for _, p := range paths {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+
+		entry := fmt.Sprintf("%s merge=ours", p)
+
+		if existingSet[entry] {
+			// Already present, skip
+			continue
+		}
+
+		newLines = append(newLines, entry)
+		existingSet[entry] = true
+	}
+
+	// Nothing to add
+	if len(newLines) == 0 {
+		return nil
+	}
+
+	// Append to the existing content (keep as-is, just add lines at the end)
+	var builder strings.Builder
+	if existing != "" {
+		builder.WriteString(existing)
+		// Ensure it ends with a newline
+		if !strings.HasSuffix(existing, "\n") {
+			builder.WriteString("\n")
+		}
+	}
+	for _, line := range newLines {
+		builder.WriteString(line)
+		builder.WriteString("\n")
+	}
+
+	return os.WriteFile(".gitattributes", []byte(builder.String()), 0644)
+}
+
 
 func runCmd(dir string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
