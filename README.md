@@ -1,26 +1,46 @@
 # 🌡️ boil - Keep your boilerplate-based projects in sync
 
-A small, lightweight command-line tool that helps you manage projects derived from a shared boilerplate repository.
+`boil` is a lightweight CLI tool for developers who maintain multiple projects that share a common boilerplate repository.  
+It simplifies project creation, keeps your projects in sync with the boilerplate, and gives you full control over divergence.
 
-It lets you:
+`boil` provides:
 
-- Create new projects based on a boilerplate
-- Link an existing project to that boilerplate
-- Pull updates from the boilerplate into any project
-- Inspect the project’s status vs. the boilerplate
-- See which files differ (added/changed/removed/renamed)
+- A clean workflow for creating new projects from a boilerplate  
+- Automated remote setup (`origin` + `upstream`)  
+- Easy updates from the boilerplate to existing projects  
+- Status and diff tooling to compare your project with upstream  
+- **File locking** via Git merge drivers, so specific files are protected from boilerplate updates
+
+Ideal for Laravel, PHP, Go, Node, or any environment where multiple projects originate from a shared template.
 
 Perfect for teams or solo developers who maintain multiple Laravel or PHP projects that all share the same base structure.
 
-## 🚀 Features
+---
 
-- Create new projects directly from your boilerplate
-- Track upstream changes via Git remotes
-- Sync updates from the boilerplate repository
-- Check project status (ahead/behind)
-- Show differences as a clean list of changed files (not full patches)
-- Zero dependencies outside the Go standard library
-- Works on macOS, Linux, and Windows
+## Features
+
+### Project Creation
+Create a new project directly from the boilerplate repository with the correct Git remotes set up.
+
+### Upstream Sync
+Pull boilerplate changes into an existing project through Git merge or rebase.
+
+### Status Overview
+Quickly inspect whether your project is ahead/behind the boilerplate.
+
+### Diff Overview
+Shows which files differ from the boilerplate (added/modified/deleted/renamed).
+
+### File Locking (New)
+Protect specific files from ever being overwritten by boilerplate updates using Git’s `merge=ours` strategy.  
+Useful for:
+
+- Project-specific config files  
+- Customized views  
+- Deployment scripts  
+- Branding-related assets
+
+---
 
 ## 📥 Installation
 
@@ -39,6 +59,8 @@ Verify:
 boil --help
 ```
 
+---
+
 ## ⚙️ Optional configuration
 
 You can define defaults in ~/.boil.json:
@@ -51,6 +73,8 @@ You can define defaults in ~/.boil.json:
 ```
 
 This allows short commands without repeatedly passing flags.
+
+---
 
 ## 🧪 Usage
 
@@ -136,6 +160,49 @@ Differences between upstream/main and your current HEAD:
   [Renamed]   app/Models/UserOld.php -> app/Models/User.php
 ```
 
+### 6. Locking files
+
+Sometimes a file starts as boilerplate but becomes project-specific.
+With `boil lock`, you can protect it from all future boilerplate updates.
+
+#### Lock a file or glob
+```
+boil lock resources/views/layouts/app.blade.php
+boil lock config/deploy.php
+boil lock resources/views/partials/*.blade.php
+```
+Boil will:
+
+1. Configure Git’s `merge=ours` driver:
+```
+git config merge.ours.driver true
+```
+2. Add entries to `.gitattributes`:
+```
+resources/views/layouts/app.blade.php merge=ours
+config/deploy.php merge=ours
+resources/views/partials/*.blade.php merge=ours
+```
+
+#### Effect
+During `boil update` any locked files will automatically keep your project’s version, even if the boilerplate changes them.
+
+This is the safest way to mark project-specific divergence without breaking sync for the rest of your codebase.
+
+---
+
+### When to Use File Locking
+
+Use `boil lock` for files that:
+- You modify heavily per project
+- Should not be synced anymore
+- Are branding or deployment related
+- Represent environment- or client-specific behavior
+
+For everything else, allow the boilerplate to update normally.
+
+---
+
 ### 🧹 Philosophy
 
 boil is intentionally simple:
@@ -143,8 +210,12 @@ boil is intentionally simple:
 - It uses plain Git under the hood
 - It never hides or alters your Git history
 - It gives you just enough abstraction to maintain boilerplate-derived projects without friction
+- It lets you diverge safely when needed
+- It lets you stay close to your boilerplate when beneficial
 
 Think of it as a tiny “boilerplate package manager” built on top of Git remotes and diffs.
+
+---
 
 ### 📄 License
 
